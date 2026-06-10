@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": "d3fb9fc102917d26c4a6d39e2dc55e74cdad613122f3e685fff70849cf45ea53",
+    "file": "text.txt",
+    "time": 1781105441,
+    "msg": "yikers",
+    "author": "leo"
+  },
+  {
+    "id": "1e320249c98f8e5f3680f9af68b0da236babbe67614ebbb0239c6ac6e67873fc",
+    "file": "test.txt",
+    "time": 1781105444,
+    "msg": "yikers",
+    "author": "leo"
+  }
+]
