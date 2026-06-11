@@ -12,6 +12,8 @@ import (
 	"SillyVCS/files"
 )
 
+// PLAN:
+// commit <msg>
 
 func CommitFile(filePath string) {
 	projPath, err := os.Getwd()
@@ -36,7 +38,6 @@ func CommitFile(filePath string) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Input: %s\n", data)
 
 	// === Save the meta data ===
 	// Make the key for the hash as the file path + the contents of the file
@@ -48,22 +49,14 @@ func CommitFile(filePath string) {
 	// Convert it into a hex string
 	idHash := fmt.Sprintf("%x", hash)
 
-
-	// TODO add actually saving the file
-	// Write temp file
-	files.SaveFile(&data, idHash, filepath.Join(MetaDirName, "snapshots"))
-	// Store bytes as a .blob
-	// compress??
+	// TODO compress??
 	// fcync the temp file and rename to .simplevcs/snapshots/.blob
-
-
-	newCommit := models.Commit{
-		Id: idHash,
-		File: filePath,
-		Time: time.Now().Unix(),
-		Msg: "yikers",
-		Author: "leo",
+	err = files.SaveFile(&data, idHash, filepath.Join(MetaDirName, "snapshots"))
+	if err != nil {
+		panic(err)
 	}
+
+	newCommit := models.NewCommit(idHash, filePath, "yikers", "", "Leo")
 
 	// TODO add temp file, fsync and write later to improve security
 	err = files.AddCommit(filepath.Join(MetaDirName, "meta.json"), newCommit)
@@ -71,11 +64,11 @@ func CommitFile(filePath string) {
 		panic(err)
 	}
 
-	// PRINT COMMIT
-	commits, err := files.ReadCommits(filepath.Join(MetaDirName, "meta.json"))
-	if err != nil {
-		fmt.Println("ERROR IN PRINTING COMMITS:")
-		fmt.Println(err)
-	}
-	fmt.Printf("COMMITS:\n  %#v\n", commits)
+	fmt.Printf("Committed successfully!\n")
+	fmt.Printf("  ID:     %s\n", newCommit.Id)
+	fmt.Printf("  File:   %s\n", newCommit.File)
+	fmt.Printf("  Msg:    %s\n", newCommit.Msg)
+	fmt.Printf("  Author: %s\n", newCommit.Author)
+	fmt.Printf("  Parent: %s\n", newCommit.Parent)
+	fmt.Printf("  Time:   %s\n", time.Unix(newCommit.Time, 0).Format("02/01/06 - 15:04:05"))
 }

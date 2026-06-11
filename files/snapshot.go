@@ -23,7 +23,7 @@ func SaveFile(data *[]byte, idHash string, snapshotDirPath string) error {
 		return err
 	}
 
-	tmpFile.Sync()
+	tmpFile.Sync() // fsync
 	tmpFile.Close()
 
 	return os.Rename(tmpFilePath, finalFilePath)

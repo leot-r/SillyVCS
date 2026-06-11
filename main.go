@@ -15,7 +15,7 @@ func main() {
 
 	switch os.Args[1] {
 	case "help":
-		fmt.Print("Commands:\n  init <>\n  commit <>\n")
+		fmt.Print("Commands:\n  init\n  commit <file_name> <msg>\n")
 	case "init":
 		if len(os.Args) < 3 {
 			commands.Init("")
@@ -28,8 +28,25 @@ func main() {
 			return
 		}
 		commands.CommitFile(os.Args[2])
+	case "stage":
+		if len(os.Args) < 3 {
+			fmt.Println("Please supply file/s to stage")
+			return
+		}
+		commands.Stage(os.Args)
 	default:
 		fmt.Printf("Unknown command: %s\n", os.Args[1])
 		os.Exit(1)
 	}
 }
+
+
+// TODO:
+// Add staging (stage command) [IN PROGRESS]
+// Add tracking parent files
+// Add .vcsignore [DONE]
+// Add HEAD file
+// Add resore command
+// Add status command
+// Add security and comppresion to commiting
+// Add check to see when staging if the file has not changed
