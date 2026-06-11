@@ -2,23 +2,16 @@ package main
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
+
+	"SillyVCS/files"
+	"SillyVCS/models"
+	"SillyVCS/utils"
 )
 
-type Commit struct {
-	Id string `json:"id"`
-	File string `json:"file"`
-	Time int64 `json:"time"`
-	Msg string `json:"msg"`
-	Parent string `json:"parent,omitempty"`
-	Author string `json:"author"`
-}
-
-type Commits []Commit
 
 var metaDirName string = ".sillyvcs"
 
@@ -49,53 +42,6 @@ func main() {
 	}
 }
 
-func readCommits(path string) (Commits, error){
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return Commits{}, nil
-		}
-		return nil, err
-	}
-
-	var commits Commits
-	err = json.Unmarshal(data, &commits)
-	return commits, err
-}
-
-func writeCommits(path string, commits Commits) error {
-	data, err := json.MarshalIndent(commits, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0644)
-}
-
-func addCommit(path string, commit Commit) error {
-	commits, err := readCommits(path)
-	if err != nil {
-		return err
-	}
-	
-	commits = append(commits, commit)
-
-	return writeCommits(path, commits)
-}
-
-func checkIfInit(rootPath string) (exists bool, error error) {
-	// Check if a repo has been initalized in the current directory
-	_, err := os.Stat(filepath.Join(rootPath, metaDirName))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		} else {
-			return false, err
-		}
-	}
-
-	return true, nil
-}
-
 func Init(rootDir string) error {
 	// If a path is not supplied use where the command was executed
 	rootPath := rootDir
@@ -106,8 +52,10 @@ func Init(rootDir string) error {
 			return err
 		}
 	}
+
+	fullPath := filepath.Join(rootDir, metaDirName)
 	
-	exists, err := checkIfInit(rootPath)
+	exists, err := utils.CheckIfInit(fullPath)
 	if err != nil {
 		panic(err)
 	}
@@ -117,6 +65,7 @@ func Init(rootDir string) error {
 	}
 
 	// If file doesnt exist setup
+	fmt.Printf("Initializing a repo in %s...\n", rootDir)
 	err = SetupMetadata(rootPath)
 	if err != nil {
 		panic(err)
@@ -169,6 +118,23 @@ func SetupMetadata(rootPath string) error {
 }
 
 func CommitFile(filePath string) {
+	projPath, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	fullPath := filepath.Join(projPath, metaDirName)
+
+	// TODO add init checking
+	repoExists, err := utils.CheckIfInit(fullPath)
+	if err != nil {
+		panic(err)
+	}
+	if repoExists == false {
+		fmt.Println("There is not an initialized repo int this directory :/")
+		return
+	}
+
+
 	// Read bytes
 	data, err := os.ReadFile(filePath)
 	fmt.Printf("Input: %s\n", data)
@@ -179,7 +145,7 @@ func CommitFile(filePath string) {
 	// Get id with SHA-256
 	hash := sha256.Sum256(hashKey)
 
-	newCommit := Commit{
+	newCommit := models.Commit{
 		Id: fmt.Sprintf("%x", hash),
 		File: filePath,
 		Time: time.Now().Unix(),
@@ -188,13 +154,13 @@ func CommitFile(filePath string) {
 	}
 
 	// TODO add temp file, fsync and write later to improve security
-	err = addCommit(filepath.Join(metaDirName, "meta.json"), newCommit)
+	err = files.AddCommit(filepath.Join(metaDirName, "meta.json"), newCommit)
 	if err != nil {
 		panic(err)
 	}
 
 	// PRINT COMMIT
-	commits, err := readCommits(filepath.Join(metaDirName, "meta.json"))
+	commits, err := files.ReadCommits(filepath.Join(metaDirName, "meta.json"))
 	if err != nil {
 		fmt.Println("ERROR IN PRINTING COMMITS:")
 		fmt.Println(err)
