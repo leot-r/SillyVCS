@@ -77,13 +77,30 @@ func setupMetadata(rootPath string) error {
 		}
 	} else {
 		// Initialize meta file with empty array
-		_, err := file.WriteString("[]")
+		_, err := file.WriteString("")
 		if err != nil {
 			return err
 		}
 	}
 	fmt.Println("meta file created")
 	defer file.Close()
+
+	// Create staging metadata file
+	stagingFile, err := os.Create(filepath.Join(rootPath, MetaDirName, "staging.json"))
+	if err != nil {
+		if os.IsExist(err) {
+			fmt.Println("staging file already exists")
+		} else {
+			return err
+		}
+	} else {
+		_, err := file.WriteString("[]")
+		if err != nil {
+			return err
+		}
+	}
+	fmt.Println("staging file created")
+	defer stagingFile.Close()
 
 	return nil
 }

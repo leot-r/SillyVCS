@@ -15,7 +15,8 @@ import (
 // PLAN:
 // commit <msg>
 
-func CommitFile(filePath string) {
+func Commit(msg string) {
+	// Get project path for checking repo
 	projPath, err := os.Getwd()
 	if err != nil {
 		panic(err)
@@ -32,7 +33,24 @@ func CommitFile(filePath string) {
 		return
 	}
 
+	// Get staged files
+	stagedFiles, err := files.ReadStageFile(filepath.Join(fullPath, "staging.json"))
+	if err != nil {
+		panic(err)
+	}
 
+	// Walk through and commit each one
+	stagedFiles.Walk(func(file models.StageFile) {
+		if !file.IsDir {
+			commitSingleFile(file.FileName, msg, "leo")
+		}
+	})
+	
+	files.ClearStageFile(filepath.Join(fullPath, "staging.json"))
+}
+
+
+func commitSingleFile(filePath string, commitMsg string, author string) {
 	// Read bytes
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -56,7 +74,8 @@ func CommitFile(filePath string) {
 		panic(err)
 	}
 
-	newCommit := models.NewCommit(idHash, filePath, "yikers", "", "Leo")
+	// TODO add parent tracking
+	newCommit := models.NewCommit(idHash, filePath, commitMsg, "", author)
 
 	// TODO add temp file, fsync and write later to improve security
 	err = files.AddCommit(filepath.Join(MetaDirName, "meta.json"), newCommit)
@@ -71,4 +90,5 @@ func CommitFile(filePath string) {
 	fmt.Printf("  Author: %s\n", newCommit.Author)
 	fmt.Printf("  Parent: %s\n", newCommit.Parent)
 	fmt.Printf("  Time:   %s\n", time.Unix(newCommit.Time, 0).Format("02/01/06 - 15:04:05"))
+
 }

@@ -5,44 +5,63 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"SillyVCS/utils"
+	"SillyVCS/models"
+	"SillyVCS/files"
 )
 
-type StageFile struct {
-	FileName string
-	IsDir bool
-	Children []StageFile
-}
-
 func Stage(args []string) {
-	path, err := os.Getwd()
+	projPath, err := os.Getwd()
 	if err != nil {panic(err)}
 
-	var stagedFiles StageFile
+	// Path to staging area / single file
+	stagingPath := filepath.Join(projPath, args[2])
 
-	ignored, err := readIgnoreFile(path)
+	// Check for initialized repo
+	repoExists, err := utils.CheckIfInit(filepath.Join(projPath, MetaDirName))
+	if err != nil {
+		panic(err)
+	}
+	if repoExists == false {
+		fmt.Println("There is not an initialized repo int this directory :/")
+		return
+	}
+
+	var stagedFiles models.StageFile
+
+	// Find what files/dirs are in the .vcsignore
+	ignored, err := readIgnoreFile(projPath)
 	if err != nil {
 		panic(err)
 	}
 
-	stagedFiles, err = stageAll(path, ignored)
+	// Find what files are being staged
+	stagedFiles, err = stageAll(stagingPath, ignored)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("=== STAGING: ===")
-	printTree(stagedFiles, "", true)
+	fmt.Println("Staging...")
+	stagedFiles.Print("", true)
+
+	// Add stage files to stage.json
+	err = files.WriteStageFile(filepath.Join(projPath, MetaDirName, "staging.json"), stagedFiles)
+	if err != nil {
+		panic(err)
+	}
 }
 
-func stageAll(path string, ignored []string) (StageFile, error) {
+func stageAll(path string, ignored []string) (models.StageFile, error) {
 	dir, err := os.ReadDir(path)
 	if err != nil {
-		return StageFile{}, err
+		return models.StageFile{}, err
 	}
 
-	root := StageFile{
+	root := models.StageFile{
 		FileName: path,
 		IsDir: true,
-		Children: []StageFile{},
+		Children: []models.StageFile{},
 	}
 
 	// Recursive bs
@@ -54,12 +73,12 @@ func stageAll(path string, ignored []string) (StageFile, error) {
 			// recurse ino subdirectory here
 			child, err := stageAll(filepath.Join(path, file.Name()), ignored)
 			if err != nil {
-				return StageFile{}, err
+				return models.StageFile{}, err
 			}
 			root.Children = append(root.Children, child)
 		} else {
-			root.Children = append(root.Children, StageFile{
-				FileName: file.Name(),
+			root.Children = append(root.Children, models.StageFile{
+				FileName: filepath.Join(path, file.Name()),
 				IsDir: false,
 				Children: nil,
 			})
@@ -67,28 +86,6 @@ func stageAll(path string, ignored []string) (StageFile, error) {
 	}
 
 	return root, nil
-}
-
-func printTree(file StageFile, prefix string, isLast bool) {
-    connector := "├── "
-    if isLast {
-        connector = "└── "
-    }
-
-    if prefix == "" {
-        fmt.Println(file.FileName)
-    } else {
-        fmt.Println(prefix + connector + file.FileName)
-    }
-
-    for i, child := range file.Children {
-        isLastChild := i == len(file.Children)-1
-        newPrefix := prefix + "│   "
-        if isLast {
-            newPrefix = prefix + "    "
-        }
-        printTree(child, newPrefix, isLastChild)
-    }
 }
 
 func readIgnoreFile(path string) ([]string, error) {

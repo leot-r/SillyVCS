@@ -17,3 +17,4 @@ func CheckIfInit(dotfilePath string) (exists bool, error error) {
 
 	return true, nil
 }
+

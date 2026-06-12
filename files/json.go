@@ -1,12 +1,13 @@
 package files
 
 import (
-	"os"
 	"encoding/json"
+	"os"
 
 	"SillyVCS/models"
 )
 
+// Commiting
 func ReadCommits(path string) (models.Commits, error){
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -36,7 +37,32 @@ func AddCommit(path string, commit models.Commit) error {
 	}
 	
 	commits = append(commits, commit)
-
 	return WriteCommits(path, commits)
 }
 
+// Staging
+func ReadStageFile(StageFilePath string) (models.StageFile, error) {
+	data, err := os.ReadFile(StageFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return models.StageFile{}, nil
+		}
+		return models.StageFile{}, err
+	}
+
+	var stageFile models.StageFile
+	err = json.Unmarshal(data, &stageFile)
+	return stageFile, err
+}
+
+func WriteStageFile(path string, stageFile models.StageFile) error {
+	data, err := json.MarshalIndent(stageFile, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+func ClearStageFile(path string) error {
+	return os.WriteFile(path, []byte("{}"), 0644)
+}

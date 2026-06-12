@@ -24,10 +24,10 @@ func main() {
 		}
 	case "commit":
 		if len(os.Args) < 3 {
-			fmt.Println("Please supply file to commit")
+			fmt.Println("Please supply commit message")
 			return
 		}
-		commands.CommitFile(os.Args[2])
+		commands.Commit(os.Args[2])
 	case "stage":
 		if len(os.Args) < 3 {
 			fmt.Println("Please supply file/s to stage")
@@ -43,10 +43,13 @@ func main() {
 
 // TODO:
 // Add staging (stage command) [IN PROGRESS]
+// 	 Add check to see when staging if the file has not changed
+// 	 make staging of just files work
+//   Make staging append
+//   Make command that clears staging
 // Add tracking parent files
-// Add .vcsignore [DONE]
 // Add HEAD file
 // Add resore command
 // Add status command
+//   Will include StageFile.Print()
 // Add security and comppresion to commiting
-// Add check to see when staging if the file has not changed
